@@ -28,13 +28,19 @@ func HandleIncomingEmails() {
 				if err != nil {
 					log.Println(err)
 				}
-				SendRegistrationMail(user)
+				SendSignUpMail(user)
+			case "registerCode":
+				user, err := connector.GetProfileById(messageObj.ToUser)
+				if err != nil {
+					log.Println(err)
+				}
+				SendRegisterCodeMail(user)
 			}
 		}
 	}
 }
 
-func SendRegistrationMail(user *dataStructures.User) {
+func SendRegisterCodeMail(user *dataStructures.User) {
 	from := os.Getenv("EMAIL_ADDRESS")
 	password := os.Getenv("EMAIL_PASSWORD")
 
@@ -45,7 +51,29 @@ func SendRegistrationMail(user *dataStructures.User) {
 	port := os.Getenv("EMAIL_PORT")
 	address := host + ":" + port
 	log.Println("Preparing to send email")
-	body := renderer(user)
+	body := registerRenderer(user)
+
+	auth := smtp.PlainAuth("", from, password, host)
+
+	err := smtp.SendMail(address, auth, from, to, body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Email send!")
+}
+
+func SendSignUpMail(user *dataStructures.User) {
+	from := os.Getenv("EMAIL_ADDRESS")
+	password := os.Getenv("EMAIL_PASSWORD")
+
+	toEmail := user.Email
+	to := []string{toEmail}
+
+	host := os.Getenv("EMAIL_HOST")
+	port := os.Getenv("EMAIL_PORT")
+	address := host + ":" + port
+	log.Println("Preparing to send email")
+	body := signupRenderer(user)
 
 	auth := smtp.PlainAuth("", from, password, host)
 
@@ -58,7 +86,7 @@ func SendRegistrationMail(user *dataStructures.User) {
 
 // Helper
 
-func renderer(user *dataStructures.User) []byte {
+func signupRenderer(user *dataStructures.User) []byte {
 	t, _ := template.ParseFiles("./templates/Signup.html")
 	var body bytes.Buffer
 
@@ -72,6 +100,25 @@ func renderer(user *dataStructures.User) []byte {
 	}{
 		FirstName: user.First_name,
 		Name:      user.Name,
+	})
+
+	return append(message, body.Bytes()...)
+}
+
+func registerRenderer(user *dataStructures.User) []byte {
+	t, _ := template.ParseFiles("./templates/Registercode.html")
+	var body bytes.Buffer
+
+	subject := "Subject: Finder Email authentification\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	message := []byte(subject + mime)
+
+	t.Execute(&body, struct {
+		Username string
+		Authcode string
+	}{
+		Username: user.Username,
+		Authcode: user.Name,
 	})
 
 	return append(message, body.Bytes()...)
