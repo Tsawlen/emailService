@@ -35,6 +35,19 @@ func HandleIncomingEmails() {
 					log.Println(err)
 				}
 				SendRegisterCodeMail(user)
+			case "payment":
+				user, err := connector.GetProfileById(messageObj.ToUser)
+				if err != nil {
+					log.Println(err)
+				}
+
+				var invoice *dataStructures.InvoiceEmailMessage
+				invoiceErr := json.Unmarshal([]byte(messageIn.Message), &messageObj)
+				if invoiceErr != nil {
+					log.Println(err)
+				}
+
+				SendRecievedPaymentMail(user, invoice)
 			}
 		}
 	}
@@ -84,6 +97,28 @@ func SendSignUpMail(user *dataStructures.User) {
 	log.Println("Email send!")
 }
 
+func SendRecievedPaymentMail(user *dataStructures.User, invoice *dataStructures.InvoiceEmailMessage) {
+	from := os.Getenv("EMAIL_ADDRESS")
+	password := os.Getenv("EMAIL_PASSWORD")
+
+	toEmail := user.Email
+	to := []string{toEmail}
+
+	host := os.Getenv("EMAIL_HOST")
+	port := os.Getenv("EMAIL_PORT")
+	address := host + ":" + port
+	log.Println("Preparing to send email")
+	body := paymentRecievedRenderer(user, invoice)
+
+	auth := smtp.PlainAuth("", from, password, host)
+
+	err := smtp.SendMail(address, auth, from, to, body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Email send!")
+}
+
 // Helper
 
 func signupRenderer(user *dataStructures.User) []byte {
@@ -119,6 +154,35 @@ func registerRenderer(user *dataStructures.User) []byte {
 	}{
 		Username: user.Username,
 		Authcode: user.Name,
+	})
+
+	return append(message, body.Bytes()...)
+}
+
+func paymentRecievedRenderer(user *dataStructures.User, invoice *dataStructures.InvoiceEmailMessage) []byte {
+	t, _ := template.ParseFiles("./templates/RecievedPayment.html")
+	var body bytes.Buffer
+
+	subject := "Subject: Finder Email Payment confirmation\n"
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	message := []byte(subject + mime)
+
+	t.Execute(&body, struct {
+		FirstName         string
+		Name              string
+		Amount            float64
+		RecieverFirstName string
+		ReceiverName      string
+		Hours             int
+		Service           string
+	}{
+		FirstName:         user.First_name,
+		Name:              user.Name,
+		Amount:            invoice.Amount,
+		RecieverFirstName: invoice.RecieverFirstName,
+		ReceiverName:      invoice.ReceiverName,
+		Hours:             invoice.Hours,
+		Service:           invoice.Service,
 	})
 
 	return append(message, body.Bytes()...)
