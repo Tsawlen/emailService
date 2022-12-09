@@ -36,12 +36,13 @@ type User struct {
 	UpdatedAt       time.Time `json:"updated_at" gorm:"autoUpdatedTime"`
 	First_name      string    `json:"firstName"`
 	Name            string    `json:"name"`
-	Gender          string    `json:"gender"`
+	Gender          uint      `json:"gender"`
 	Username        string    `json:"username"`
 	Email           string    `json:"email"`
 	Street          string    `json:"street"`
 	HouseNumber     string    `json:"houseNumber"`
 	TelephoneNumber string    `json:"telephoneNumber"`
+	Price           float64   `json:"price"`
 	ProfilPicture   []byte    `json:"profilePicture"`
 	Confirmed       bool      `json:"confirmed"`
 	Active          bool      `json:"active"`
@@ -70,13 +71,14 @@ type Skill struct {
 }
 
 type Invoice struct {
-	Id        uuid.UUID    `json:"id" gorm:"primary_key"`
-	CreatedAt time.Time    `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt time.Time    `json:"updatedAt" gorm:"autoUpdatedTime"`
-	Biller    int          `json:"biller"`
-	Payer     int          `json:"payer"`
-	Amount    float64      `json:"amount"`
-	Service   string       `json:"service"`
-	Hours     int          `json:"hours"`
-	PayedAt   sql.NullTime `json:"payedAt" gorm:"type:TIMESTAMP NULL"`
+	Id         uuid.UUID    `json:"id" gorm:"primary_key"`
+	CreatedAt  time.Time    `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt  time.Time    `json:"updatedAt" gorm:"autoUpdatedTime"`
+	Biller     int          `json:"biller"`
+	Payer      int          `json:"payer"`
+	Amount     float64      `json:"amount"`
+	Service    string       `json:"service"`
+	Hours      int          `json:"hours"`
+	InvoicePDF []byte       `json:"invoicePDF"`
+	PayedAt    sql.NullTime `json:"payedAt" gorm:"type:TIMESTAMP NULL"`
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/gorilla/websocket"
 	"github.com/tsawlen/emailService/common/dataStructures"
@@ -25,7 +26,7 @@ func readClientMessages(webSocket *websocket.Conn, incomingMessages chan dataStr
 }
 
 func InitWebSocket() {
-	url := url.URL{Scheme: "ws", Host: "0.0.0.0:8082", Path: "/subscribe"}
+	url := url.URL{Scheme: "ws", Host: os.Getenv("CLOUD_RELAY_HOST"), Path: "/subscribe"}
 	header := http.Header{}
 	header.Add("topic", "email")
 	client, _, errCon := websocket.DefaultDialer.Dial(url.String(), header)

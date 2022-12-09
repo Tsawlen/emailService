@@ -2,9 +2,14 @@ package controller
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
+	"mime/multipart"
+
+	"net/http"
 	"net/smtp"
 	"os"
 
@@ -46,9 +51,20 @@ func HandleIncomingEmails() {
 				if invoiceErr != nil {
 					log.Println(err)
 				}
-
 				SendRecievedPaymentMail(user, invoice)
+			case "invoice":
+				user, err := connector.GetProfileById(messageObj.ToUser)
+				if err != nil {
+					log.Println(err)
+				}
+				var invoice *dataStructures.Invoice
+				invoiceErr := json.Unmarshal([]byte(messageObj.Message), &invoice)
+				if invoiceErr != nil {
+					log.Println(invoiceErr)
+				}
+				SendInvoiceMail(user, invoice)
 			}
+
 		}
 	}
 }
@@ -95,6 +111,27 @@ func SendSignUpMail(user *dataStructures.User) {
 		panic(err)
 	}
 	log.Println("Email send!")
+}
+
+func SendInvoiceMail(user *dataStructures.User, invoice *dataStructures.Invoice) {
+	from := os.Getenv("EMAIL_ADDRESS")
+	password := os.Getenv("EMAIL_PASSWORD")
+
+	toEmail := user.Email
+	to := []string{toEmail}
+
+	host := os.Getenv("EMAIL_HOST")
+	port := os.Getenv("EMAIL_PORT")
+	address := host + ":" + port
+	log.Println("Preparing to send email")
+	body := invoiceRenderer(user, invoice)
+	auth := smtp.PlainAuth("", from, password, host)
+	err := smtp.SendMail(address, auth, from, to, body)
+	if err != nil {
+		panic(err)
+	}
+	log.Println("Email send!")
+	return
 }
 
 func SendRecievedPaymentMail(user *dataStructures.User, invoice *dataStructures.InvoiceEmailMessage) {
@@ -159,6 +196,50 @@ func registerRenderer(user *dataStructures.User) []byte {
 	return append(message, body.Bytes()...)
 }
 
+func invoiceRenderer(user *dataStructures.User, invoice *dataStructures.Invoice) []byte {
+	buf := bytes.NewBuffer(nil)
+	writer := multipart.NewWriter(buf)
+	boundary := writer.Boundary()
+	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s \n", boundary))
+	buf.WriteString("MIME-Version: 1.0\n")
+	buf.WriteString(fmt.Sprintf("To: %s\n", user.Email))
+	buf.WriteString(fmt.Sprintf("Subject: Finder Invoice \n\n"))
+	buf.WriteString(fmt.Sprintf("--%s\n", boundary))
+
+	t, _ := template.ParseFiles("./templates/Invoice.html")
+	var body bytes.Buffer
+	t.Execute(&body, struct {
+		FirstName string
+		Name      string
+		Amount    float64
+		Hours     int
+		Service   string
+	}{
+		FirstName: user.First_name,
+		Name:      user.Name,
+		Amount:    invoice.Amount,
+		Hours:     invoice.Hours,
+		Service:   invoice.Service,
+	})
+	buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\n")
+	buf.WriteString("MIME-Version: 1.0\n")
+	buf.WriteString("Content-Transfer-Encoding: 7bit\n\n")
+	buf.Write(body.Bytes())
+	buf.WriteString(fmt.Sprintf("\n\n--%s\n", boundary))
+
+	buf.WriteString(fmt.Sprintf("Content-Type: %s; name=%s \n", http.DetectContentType(invoice.InvoicePDF), "Invoice.pdf"))
+	buf.WriteString("MIME-Version: 1.0\n")
+	buf.WriteString("Content-Transfer-Encoding: base64\n")
+	buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=Invoice.pdf\n\n"))
+	b := make([]byte, base64.StdEncoding.EncodedLen(len(invoice.InvoicePDF)))
+	base64.StdEncoding.Encode(b, invoice.InvoicePDF)
+	buf.Write(b)
+	buf.WriteString(fmt.Sprintf("\n--%s", boundary+"--"))
+
+	return buf.Bytes()
+
+}
+
 func paymentRecievedRenderer(user *dataStructures.User, invoice *dataStructures.InvoiceEmailMessage) []byte {
 	t, _ := template.ParseFiles("./templates/RecievedPayment.html")
 	var body bytes.Buffer
@@ -187,3 +268,5 @@ func paymentRecievedRenderer(user *dataStructures.User, invoice *dataStructures.
 
 	return append(message, body.Bytes()...)
 }
+
+// Generate pdf
