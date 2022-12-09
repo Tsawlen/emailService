@@ -1,6 +1,7 @@
 package dataStructures
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,14 @@ type EmailMessage struct {
 	ToUser  int    `json:"toUser"`
 	Type    string `json:"type"`
 	Message []byte `json:"message"`
+}
+
+type InvoiceEmailMessage struct {
+	Amount            float64 `json:"amount"`
+	RecieverFirstName string  `json:"recieverFirstName"`
+	ReceiverName      string  `json:"recieverName"`
+	Hours             int     `json:"hours"`
+	Service           string  `json:"service"`
 }
 
 type User struct {
@@ -58,4 +67,16 @@ type Skill struct {
 	Level          string    `json:"level"`
 	UsersSearching []*User   `json:"usersSearching" gorm:"many2many:user_searchedSkills"`
 	UsersAchieved  []*User   `json:"usersAchieved" gorm:"many2many:user_achievedSkills"`
+}
+
+type Invoice struct {
+	Id        uuid.UUID    `json:"id" gorm:"primary_key"`
+	CreatedAt time.Time    `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt time.Time    `json:"updatedAt" gorm:"autoUpdatedTime"`
+	Biller    int          `json:"biller"`
+	Payer     int          `json:"payer"`
+	Amount    float64      `json:"amount"`
+	Service   string       `json:"service"`
+	Hours     int          `json:"hours"`
+	PayedAt   sql.NullTime `json:"payedAt" gorm:"type:TIMESTAMP NULL"`
 }

@@ -16,8 +16,6 @@
         }
         table {
           border-collapse: separate;
-          mso-table-lspace: 0pt;
-          mso-table-rspace: 0pt;
           width: 100%; }
           table td {
             font-family: sans-serif;
@@ -78,7 +76,6 @@
           max-width: 0;
           opacity: 0;
           overflow: hidden;
-          mso-hide: all;
           visibility: hidden;
           width: 0; 
         }
@@ -163,7 +160,7 @@
 </head>
 <html>
     <body>
-        <span class="preheader">Thanks for signing up to Finder!</span>
+        <span class="preheader">We have recieved your payment of {{.Amount}} in Finder!</span>
         <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body">
             <tr>
                 <td class="container">
@@ -174,10 +171,10 @@
                                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                                         <tr>
                                             <td>
-                                                <p style="font-weight: bold; padding-bottom:2%;">Welcome to Finder {{.FirstName}} {{.Name}},</p>
-                                                <p>your account is now activated and ready to use!</p>
-                                                <p style="padding-bottom: 8%;">Go check out the teachers for your topic now and start learning!</p>
-                                                <p>See you in the App,</p>
+                                                <p style="font-weight: bold; padding-bottom:2%;">Thank you for using Finder, {{.FirstName}} {{.Name}}!</p>
+                                                <p>Hereby we confirm that we have recieved your payment of {{.Aumount}}.</p>
+                                                <p style="padding-bottom: 8%;">Those were billed for recieving {{.Hours}} lessons in {{.Service}} with {{.RecieverFirstName}} {{.RecieverName}}</p>
+                                                <p>Best regards,</p>
                                                 <p>Your Finder Team!</p>
                                             </td>
                                         </tr>
