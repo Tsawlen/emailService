@@ -39,7 +39,13 @@ func HandleIncomingEmails() {
 				if err != nil {
 					log.Println(err)
 				}
-				SendRegisterCodeMail(user)
+				type codeStruct struct {
+					Code string
+				}
+				var activationCode codeStruct
+				json.Unmarshal([]byte(messageObj.Message), &activationCode)
+				log.Println(activationCode.Code)
+				SendRegisterCodeMail(user, activationCode.Code)
 			case "payment":
 				user, err := connector.GetProfileById(messageObj.ToUser)
 				if err != nil {
@@ -69,7 +75,7 @@ func HandleIncomingEmails() {
 	}
 }
 
-func SendRegisterCodeMail(user *dataStructures.User) {
+func SendRegisterCodeMail(user *dataStructures.User, activationCode string) {
 	from := os.Getenv("EMAIL_ADDRESS")
 	password := os.Getenv("EMAIL_PASSWORD")
 
@@ -80,7 +86,7 @@ func SendRegisterCodeMail(user *dataStructures.User) {
 	port := os.Getenv("EMAIL_PORT")
 	address := host + ":" + port
 	log.Println("Preparing to send email")
-	body := registerRenderer(user)
+	body := registerRenderer(user, activationCode)
 
 	auth := smtp.PlainAuth("", from, password, host)
 
@@ -177,7 +183,7 @@ func signupRenderer(user *dataStructures.User) []byte {
 	return append(message, body.Bytes()...)
 }
 
-func registerRenderer(user *dataStructures.User) []byte {
+func registerRenderer(user *dataStructures.User, activationCode string) []byte {
 	t, _ := template.ParseFiles("./templates/Registercode.html")
 	var body bytes.Buffer
 
@@ -190,7 +196,7 @@ func registerRenderer(user *dataStructures.User) []byte {
 		Authcode string
 	}{
 		Username: user.Username,
-		Authcode: user.Name,
+		Authcode: activationCode,
 	})
 
 	return append(message, body.Bytes()...)
