@@ -26,18 +26,21 @@ func HandleIncomingEmails() {
 			err := json.Unmarshal([]byte(messageIn.Message), &messageObj)
 			if err != nil {
 				log.Println(err)
+				return
 			}
 			switch messageObj.Type {
 			case "register":
 				user, err := connector.GetProfileById(messageObj.ToUser)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				SendSignUpMail(user)
 			case "registerCode":
 				user, err := connector.GetProfileById(messageObj.ToUser)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				type codeStruct struct {
 					Code string
@@ -50,6 +53,7 @@ func HandleIncomingEmails() {
 				user, err := connector.GetProfileById(messageObj.ToUser)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 
 				var invoice *dataStructures.InvoiceEmailMessage
@@ -62,11 +66,13 @@ func HandleIncomingEmails() {
 				user, err := connector.GetProfileById(messageObj.ToUser)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 				var invoice *dataStructures.Invoice
 				invoiceErr := json.Unmarshal([]byte(messageObj.Message), &invoice)
 				if invoiceErr != nil {
 					log.Println(invoiceErr)
+					return
 				}
 				SendInvoiceMail(user, invoice)
 			}

@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  emailService:
+    image: seyna-email-service:latest
+    container_name: email-service
+    depends_on:
+      - "cloudRelay"
+  cloudRelay:
+    image: cloudrelay:latest
+    container_name: cloudRelay
+    ports:
+      - 8082:8082
+  

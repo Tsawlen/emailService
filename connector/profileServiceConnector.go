@@ -14,7 +14,7 @@ import (
 
 func GetProfileById(id int) (*dataStructures.User, error) {
 	var user dataStructures.User
-	query := "http://0.0.0.0:8080/profile/" + strconv.Itoa(id)
+	query := os.Getenv("PROFILE_SERVICE_HOST") + "/profile/" + strconv.Itoa(id)
 	restClient := http.Client{
 		Timeout: time.Second * 40,
 	}
